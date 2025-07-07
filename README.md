@@ -8,11 +8,10 @@ We assess the agent's responses for hallucination, relevance, usefulness, and ke
 
 ## 📑 Project Structure
 
-
-│── agent_backend.py # Flask backend (chat API)
-│── test.py # Opik evaluation script
-│── .env # Environment variables
-│── index.html # Environment variables
+├── agent_backend.py # Flask backend (chat API)
+├── test.py # Opik evaluation script
+├── .env # Environment variables
+├── index.html # Environment variables
 ├── requirements.txt
 ├── README.md
 
@@ -56,8 +55,10 @@ OPENAI_API_KEY=<your_openai_api_key>
    ```bash
    python test.py
 
+6. **Go to Opik Comet Console*
+  
 
-5. **Result Opik Comet Evaluation*
+7. **Result Opik Comet Evaluation*
    ![image](https://github.com/user-attachments/assets/5e83bd50-26ab-472b-8e9b-f89eda57d993)
 
 
