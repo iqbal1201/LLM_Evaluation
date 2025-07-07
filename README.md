@@ -16,6 +16,16 @@ We assess the agent's responses for hallucination, relevance, usefulness, and ke
 ├── README.md
 
 
+LLM-Evaluation/
+├── agent_backend.py          # Flask backend (chat API)
+├── test.py                   # Opik evaluation script
+├── .env                      # Environment variables
+├── index.html                # Frontend page (if any)
+├── requirements.txt          # Python dependencies
+├── README.md                 # Project documentation
+└── .gitignore                # Ignore .env, __pycache__, etc. (recommended)
+
+
 ---
 
 ## 📦 Prerequisites
