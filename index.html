@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simplified Business Agent AI Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        .message-box {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .message-box.info {
+            background-color: #e0f2fe; /* Light blue */
+            color: #0284c7; /* Darker blue */
+        }
+        .message-box.success {
+            background-color: #dcfce7; /* Light green */
+            color: #16a34a; /* Darker green */
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Light red */
+            color: #dc2626; /* Darker red */
+        }
+        /* Style for radio labels to align */
+        .radio-label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px; /* Spacing between radios */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl">
+        <div id="messageContainer" class="message-box hidden"></div>
+
+        <div id="stepContainer">
+            </div>
+
+        <div class="flex justify-between mt-8 pt-4 border-t border-gray-200">
+            <button id="prevBtn" class="px-6 py-2 rounded-full bg-gray-200 text-gray-800 font-semibold shadow-md hover:bg-gray-300 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 hidden">Previous</button>
+            <button id="nextBtn" class="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold shadow-md hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 ml-auto">Next</button>
+            <button id="generateBtn" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:from-green-600 hover:to-emerald-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300 hidden">Generate Agent AI</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const stepContainer = document.getElementById('stepContainer');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const messageContainer = document.getElementById('messageContainer');
+
+        // State for the multi-step form
+        let currentStep = 0; // 0: Welcome, 1: Core Agent, 2: Design, 3: KB, 4: Voice, 5: Campaign, 6: Review
+        const agentData = {
+            name: '',
+            gender: '',
+            useCase: '',
+            llm: 'gemini-2.0-flash', // Default LLM
+            language: 'English', // Default Language
+            purpose: '',
+            aboutGame: '', // Renamed from 'aboutGame' to 'businessContext' conceptually
+            traits: '',
+            flaws: '',
+            knowledgeBaseType: 'direct_text', // NEW default: direct_text
+            knowledgeBaseContent: '', // For direct text input
+            knowledgeBaseFile: null, // NEW: To store the File object for upload
+            voiceSelect: '',
+            voiceSpeed: 'Normal', // Default Voice Speed
+            campaignDesignPrompt: '',
+            // Retaining these for backend compatibility, though not directly in this simplified frontend form
+            avatar: '',
+            ageIndicator: '',
+            advancedFeatures: {
+                multiLanguage: false,
+                turnTakingScale: false,
+                enhancementScale: false,
+            },
+            deploymentChannels: [],
+            generatedAIResponse: '',
+            deploymentId: ''
+        };
+
+        // Voice options (kept as is)
+        const voiceOptions = {
+            'English': {
+                'Male': [
+                    { value: 'en-US-Chirp3-HD-Charon', text: 'en-US-Chirp3-HD-Charon' },
+                    { value: 'en-US-Chirp3-HD-Enceladus', text: 'en-US-Chirp3-HD-Enceladus' },
+                    { value: 'en-US-Chirp3-HD-Achird', text: 'en-US-Chirp3-HD-Achird' },
+                    { value: 'en-US-Chirp3-HD-Alnilam', text: 'en-US-Chirp3-HD-Alnilam' }
+                ],
+                'Female': [
+                    { value: 'en-US-Chirp3-HD-Erinome', text: 'en-US-Chirp3-HD-Erinome' },
+                    { value: 'en-US-Chirp3-HD-Gacrux', text: 'en-US-Chirp3-HD-Gacrux' },
+                    { value: 'en-US-Chirp3-HD-Achernar', text: 'en-US-Chirp3-HD-Achernar' }
+                ]
+            },
+            'Bahasa Indonesia': {
+                'Male': [
+                    { value: 'id-ID-Chirp3-HD-Achird', text: 'id-ID-Chirp3-HD-Achird' },
+                    { value: 'id-ID-Chirp3-HD-Algenib', text: 'id-ID-Chirp3-HD-Algenib' },
+                    { value: 'id-ID-Chirp3-HD-Charon', text: 'id-ID-Chirp3-HD-Charon' },
+                    { value: 'id-ID-Chirp3-HD-Fenrir', text: 'id-ID-Chirp3-HD-Fenrir' }
+                ],
+                'Female': [
+                    { value: 'id-ID-Chirp3-HD-Despina', text: 'id-ID-Chirp3-HD-Despina' },
+                    { value: 'id-ID-Chirp3-HD-Callirrhoe', text: 'id-ID-Chirp3-HD-Callirrhoe' },
+                    { value: 'id-ID-Chirp3-HD-Erinome', text: 'id-ID-Chirp3-HD-Erinome' }
+                ]
+            },
+            'Hindi': {
+                'Male': [
+                    { value: 'hi-IN-Chirp3-HD-Achird', text: 'hi-IN-Chirp3-HD-Achird' },
+                    { value: 'hi-IN-Chirp3-HD-Algenib', text: 'hi-IN-Chirp3-HD-Algenib' },
+                    { value: 'hi-IN-Chirp3-HD-Alnilam', text: 'hi-IN-Chirp3-HD-Alnilam' }
+                ],
+                'Female': [
+                    { value: 'hi-IN-Chirp3-HD-Aoede', text: 'hi-IN-Chirp3-HD-Aoede' },
+                    { value: 'hi-IN-Chirp3-HD-Vindemiatrix', text: 'hi-IN-Chirp3-HD-Vindemiatrix' },
+                    { value: 'hi-IN-Chirp3-HD-Sulafat', text: 'hi-IN-Chirp3-HD-Sulafat' }
+                ]
+            }
+        };
+
+
+        // --- Helper Functions ---
+        function showMessage(text, type = 'info') {
+            messageContainer.textContent = text;
+            messageContainer.className = `message-box ${type}`;
+            messageContainer.classList.remove('hidden');
+            setTimeout(() => {
+                messageContainer.classList.add('hidden');
+                messageContainer.textContent = '';
+            }, 5000);
+        }
+
+        // Updates agentData based on form input changes
+        function handleInputChange(event) {
+            const { name, value, type, checked, files } = event.target; // Added 'files' for file input
+            let needsRerender = false;
+
+            if (name === 'knowledgeBaseType') {
+                agentData[name] = value;
+                // If knowledge base type changes, reset content and file
+                agentData.knowledgeBaseContent = '';
+                agentData.knowledgeBaseFile = null; // Reset file
+                needsRerender = true; // Re-render to show/hide relevant input fields
+            } else if (name === 'knowledgeBaseFile') { // Handle file input specifically
+                agentData.knowledgeBaseFile = files ? files[0] : null;
+            } else {
+                // Check if language or gender is changing, which affects voice options
+                if ((name === 'language' && agentData.language !== value) ||
+                    (name === 'gender' && agentData.gender !== value)) {
+                    needsRerender = true;
+                    // Reset voiceSelect if language or gender changes to avoid invalid selection
+                    agentData.voiceSelect = '';
+                }
+                agentData[name] = value;
+            }
+
+            // Re-render only if necessary and on the relevant steps (1: Core, 3: KB, 4: Voice)
+            if (needsRerender && (currentStep === 1 || currentStep === 3 || currentStep === 4)) {
+                renderStep();
+            }
+        }
+
+        // Dynamically renders the current step's content
+        function renderStep() {
+            let content = '';
+            let showPrev = false;
+            let showNext = false;
+            let showGenerate = false;
+
+            // Clear previous content
+            stepContainer.innerHTML = '';
+
+            switch (currentStep) {
+                case 0: // Welcome Screen
+                    content = `
+                        <div class="text-center text-gray-600">
+                            <h2 class="text-2xl font-bold mb-4">Welcome to the Business Agent AI Creator!</h2>
+                            <p class="mb-6">Define your personalized customer service agent, its intelligence, conversation flow, and deploy to communication channels.</p>
+                        </div>
+                    `;
+                    showNext = true;
+                    nextBtn.textContent = 'Start Creating Agent';
+                    break;
+                case 1: // Core Agent Details (Name, Gender, Use Case, Language, LLM)
+                    content = `
+                        <h2 class="text-2xl font-bold text-gray-800">1. Core Agent Details</h2>
+                        <div class="space-y-4 mt-4">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Agent Name</label>
+                                <input type="text" id="name" name="name" value="${agentData.name}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., SupportBot Alpha">
+                            </div>
+                            <div>
+                                <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                                <select id="gender" name="gender" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male" ${agentData.gender === 'Male' ? 'selected' : ''}>Male</option>
+                                    <option value="Female" ${agentData.gender === 'Female' ? 'selected' : ''}>Female</option>
+                                    <option value="Non-binary" ${agentData.gender === 'Non-binary' ? 'selected' : ''}>Non-binary</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="useCase" class="block text-sm font-medium text-gray-700 mb-1">Use Case</label>
+                                <select id="useCase" name="useCase" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="">Select Use Case</option>
+                                    <option value="Customer Support" ${agentData.useCase === 'Customer Support' ? 'selected' : ''}>Customer Support</option>
+                                    <option value="Reservation" ${agentData.useCase === 'Reservation' ? 'selected' : ''}>Reservation</option>
+                                    <option value="Onboarding" ${agentData.useCase === 'Onboarding' ? 'selected' : ''}>Onboarding</option>
+                                    <option value="Sales Inquiry" ${agentData.useCase === 'Sales Inquiry' ? 'selected' : ''}>Sales Inquiry</option>
+                                    <option value="Technical Support" ${agentData.useCase === 'Technical Support' ? 'selected' : ''}>Technical Support</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="language" class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                                <select id="language" name="language" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="English" ${agentData.language === 'English' ? 'selected' : ''}>English</option>
+                                    <option value="Bahasa Indonesia" ${agentData.language === 'Bahasa Indonesia' ? 'selected' : ''}>Bahasa Indonesia</option>
+                                    <option value="Hindi" ${agentData.language === 'Hindi' ? 'selected' : ''}>Hindi</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="llm" class="block text-sm font-medium text-gray-700 mb-1">Choose LLM</label>
+                                <select id="llm" name="llm" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="gemini-2.0-flash" ${agentData.llm === 'gemini-2.0-flash' ? 'selected' : ''}>Gemini 2.0 Flash (Default)</option>
+                                    <option value="gemini-pro" ${agentData.llm === 'gemini-pro' ? 'selected' : ''}>Gemini Pro</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    showPrev = true;
+                    showNext = true;
+                    nextBtn.textContent = 'Next';
+                    break;
+                case 2: // Agent Design (Purpose, Business Context, Traits, Flaws)
+                    content = `
+                        <h2 class="text-2xl font-bold text-gray-800">2. Agent Design</h2>
+                        <div class="space-y-4 mt-4">
+                            <div>
+                                <label for="purpose" class="block text-sm font-medium text-gray-700 mb-1">Purpose (e.g., Handle product FAQs, Book appointments)</label>
+                                <input type="text" id="purpose" name="purpose" value="${agentData.purpose}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., Resolve customer issues, Guide new users">
+                            </div>
+                            <div>
+                                <label for="aboutGame" class="block text-sm font-medium text-gray-700 mb-1">Business Context (paste or describe)</label>
+                                <textarea id="aboutGame" name="aboutGame" rows="4" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Briefly describe your company, products/services, and target audience.">${agentData.aboutGame}</textarea>
+                            </div>
+                            <div>
+                                <label for="traits" class="block text-sm font-medium text-gray-700 mb-1">Traits (comma-separated, e.g., Professional, Empathetic, Concise)</label>
+                                <input type="text" id="traits" name="traits" value="${agentData.traits}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., Friendly, Direct, Informative">
+                            </div>
+                            <div>
+                                <label for="flaws" class="block text-sm font-medium text-gray-700 mb-1">Flaws (comma-separated, if any, e.g., Can be too formal, Lacks humor)</label>
+                                <input type="text" id="flaws" name="flaws" value="${agentData.flaws}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., Sometimes asks for clarification repeatedly">
+                            </div>
+                        </div>
+                    `;
+                    showPrev = true;
+                    showNext = true;
+                    nextBtn.textContent = 'Next';
+                    break;
+                case 3: // Knowledge Base (Direct Text, Upload Document)
+                    content = `
+                        <h2 class="text-2xl font-bold text-gray-800">3. Knowledge Base</h2>
+                        <div class="space-y-4 mt-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">How do you want to provide the knowledge base?</label>
+                                <div class="flex flex-col space-y-2">
+                                    <label class="radio-label">
+                                        <input type="radio" name="knowledgeBaseType" value="direct_text" class="form-radio h-4 w-4 text-blue-600" ${agentData.knowledgeBaseType === 'direct_text' ? 'checked' : ''}>
+                                        <span class="ml-2 text-gray-700">Direct Text Input</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="knowledgeBaseType" value="upload_doc" class="form-radio h-4 w-4 text-blue-600" ${agentData.knowledgeBaseType === 'upload_doc' ? 'checked' : ''}>
+                                        <span class="ml-2 text-gray-700">Upload Document (PDF, Word)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="knowledgeBaseInputArea">
+                                ${agentData.knowledgeBaseType === 'direct_text' ? `
+                                    <label for="knowledgeBaseContent" class="block text-sm font-medium text-gray-700 mb-1">Knowledge Base Content</label>
+                                    <textarea id="knowledgeBaseContent" name="knowledgeBaseContent" rows="8" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Paste your knowledge base text here.">${agentData.knowledgeBaseContent}</textarea>
+                                ` : ''}
+                                ${agentData.knowledgeBaseType === 'upload_doc' ? `
+                                    <label for="knowledgeBaseFile" class="block text-sm font-medium text-gray-700 mb-1">Upload Document (PDF, Word)</label>
+                                    <input type="file" id="knowledgeBaseFile" name="knowledgeBaseFile" accept=".pdf,.doc,.docx" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    <p class="mt-2 text-sm text-gray-500">Note: Document content extraction requires backend processing.</p>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                    showPrev = true;
+                    showNext = true;
+                    nextBtn.textContent = 'Next';
+                    break;
+                case 4: // Voice Design (Voice type, Voice Speed)
+                    const selectedLanguage = agentData.language;
+                    const selectedGender = agentData.gender;
+                    const availableVoices = voiceOptions[selectedLanguage]?.[selectedGender] || [];
+
+                    let voiceOptionsHtml = '<option value="">Choose a voice</option>';
+                    if (availableVoices.length === 0 && (selectedLanguage && selectedGender)) {
+                        voiceOptionsHtml += '<option value="" disabled>No voices available for selected language/gender</option>';
+                    } else if (!selectedLanguage || !selectedGender) {
+                        voiceOptionsHtml += '<option value="" disabled>Select Language and Gender first</option>';
+                    }
+
+                    availableVoices.forEach(voice => {
+                        voiceOptionsHtml += `<option value="${voice.value}" ${agentData.voiceSelect === voice.value ? 'selected' : ''}>${voice.text}</option>`;
+                    });
+
+                    content = `
+                        <h2 class="text-2xl font-bold text-gray-800">4. Voice Design</h2>
+                        <div class="space-y-4 mt-4">
+                            <div>
+                                <label for="voiceSelect" class="block text-sm font-medium text-gray-700 mb-1">Select Voice</label>
+                                <select id="voiceSelect" name="voiceSelect" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    ${voiceOptionsHtml}
+                                </select>
+                            </div>
+                            <div>
+                                <label for="voiceSpeed" class="block text-sm font-medium text-gray-700 mb-1">Voice Speed (e.g., Normal, Fast, Slow)</label>
+                                <select id="voiceSpeed" name="voiceSpeed" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="Normal" ${agentData.voiceSpeed === 'Normal' ? 'selected' : ''}>Normal</option>
+                                    <option value="Fast" ${agentData.voiceSpeed === 'Fast' ? 'selected' : ''}>Fast</option>
+                                    <option value="Slow" ${agentData.voiceSpeed === 'Slow' ? 'selected' : ''}>Slow</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    showPrev = true;
+                    showNext = true;
+                    nextBtn.textContent = 'Next';
+                    break;
+                case 5: // Campaign Design
+                    content = `
+                        <h2 class="text-2xl font-bold text-gray-800">5. Campaign Design</h2>
+                        <div class="space-y-4 mt-4">
+                            <div>
+                                <label for="campaignDesignPrompt" class="block text-sm font-medium text-gray-700 mb-1">Conversation Flow / Function Calling Instructions</label>
+                                <textarea id="campaignDesignPrompt" name="campaignDesignPrompt" rows="8" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Describe the desired conversation flow, specific actions the agent should take, and potential function calls (e.g., 'check calendar for appointments', 'retrieve order status', 'initiate a refund process'). Be very precise about conditions and responses.">${agentData.campaignDesignPrompt}</textarea>
+                                <p class="mt-2 text-sm text-gray-500">Example: 'If user asks for order status, call \`getOrderStatus(orderId)\`. If order is 'shipped', reply 'Your order [orderId] has shipped and will arrive by [date]'. Otherwise, reply 'Order [orderId] is currently [status]'.</p>
+                            </div>
+                        </div>
+                    `;
+                    showPrev = true;
+                    showNext = true;
+                    nextBtn.textContent = 'Next';
+                    break;
+                case 6: // Review and Generate
+                    content = `
+                        <h2 class="text-2xl font-bold text-gray-800">6. Review Agent & Generate</h2>
+                        <div class="bg-gray-50 p-6 rounded-lg shadow-inner mt-6">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Agent Summary</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-800">
+                                <p><strong class="font-medium">Name:</strong> ${agentData.name || 'N/A'}</p>
+                                <p><strong class="font-medium">Gender:</strong> ${agentData.gender || 'N/A'}</p>
+                                <p><strong class="font-medium">Use Case:</strong> ${agentData.useCase || 'N/A'}</p>
+                                <p><strong class="font-medium">LLM:</strong> ${agentData.llm || 'N/A'}</p>
+                                <p><strong class="font-medium">Language:</strong> ${agentData.language || 'N/A'}</p>
+                                <p><strong class="font-medium">Purpose:</strong> ${agentData.purpose || 'N/A'}</p>
+                                <p class="col-span-2"><strong class="font-medium">Business Context:</strong> ${agentData.aboutGame || 'N/A'}</p>
+                                <p><strong class="font-medium">Traits:</strong> ${agentData.traits || 'N/A'}</p>
+                                <p><strong class="font-medium">Flaws:</strong> ${agentData.flaws || 'N/A'}</p>
+                                <p><strong class="font-medium">Knowledge Base Type:</strong> ${agentData.knowledgeBaseType || 'N/A'}</p>
+                                ${agentData.knowledgeBaseType === 'upload_doc' && agentData.knowledgeBaseFile ?
+                                    `<p class="col-span-2"><strong class="font-medium">Knowledge Base File:</strong> ${agentData.knowledgeBaseFile.name || 'N/A'}</p>` :
+                                    `<p class="col-span-2"><strong class="font-medium">Knowledge Base Sample:</strong> ${agentData.knowledgeBaseContent.substring(0, 200) || 'N/A'}...</p>`
+                                }
+                                <p><strong class="font-medium">Voice Select:</strong> ${agentData.voiceSelect || 'N/A'}</p>
+                                <p><strong class="font-medium">Voice Speed:</strong> ${agentData.voiceSpeed || 'N/A'}</p>
+                                <p class="col-span-2"><strong class="font-medium">Campaign Design/Function Calling:</strong> ${agentData.campaignDesignPrompt.substring(0, 200) || 'N/A'}...</p>
+                            </div>
+                        </div>
+
+                        ${agentData.generatedAIResponse ? `
+                            <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+                                <h3 class="text-xl font-semibold text-gray-700 mb-4">Generated Agent Persona & Flow:</h3>
+                                <pre class="whitespace-pre-wrap font-mono text-sm text-gray-800 bg-gray-50 p-4 rounded-md border border-gray-200">
+                                    ${agentData.generatedAIResponse}
+                                </pre>
+                                ${agentData.deploymentId ? `
+                                    <p class="mt-4 text-md font-semibold text-blue-700">
+                                        Agent ID: <span class="font-mono bg-blue-50 p-1 rounded">${agentData.deploymentId}</span>
+                                        <br/>
+                                        <span class="text-sm text-gray-600">This ID uniquely identifies your agent.</span>
+                                    </p>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    `;
+                    showPrev = true;
+                    showGenerate = true;
+                    nextBtn.textContent = 'Next'; // Hidden on this step
+                    break;
+                default:
+                    break;
+            }
+
+            stepContainer.innerHTML = content;
+
+            // Attach event listeners to all newly created input fields
+            const inputs = stepContainer.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('input', handleInputChange);
+            });
+
+            // Specific handling for radio buttons to re-render knowledge base section
+            if (currentStep === 3) { // KB step
+                const knowledgeBaseRadios = stepContainer.querySelectorAll('input[name="knowledgeBaseType"]');
+                knowledgeBaseRadios.forEach(radio => {
+                    radio.addEventListener('change', handleInputChange);
+                });
+                // Attach input listener to the dynamically created content/file areas
+                const kbContentInput = stepContainer.querySelector('#knowledgeBaseContent');
+                if (kbContentInput) {
+                    kbContentInput.addEventListener('input', handleInputChange);
+                }
+                const kbFileInput = stepContainer.querySelector('#knowledgeBaseFile');
+                if (kbFileInput) {
+                    kbFileInput.addEventListener('change', handleInputChange); // 'change' for file inputs
+                }
+            }
+
+            // Update button visibility
+            prevBtn.classList.toggle('hidden', !showPrev);
+            nextBtn.classList.toggle('hidden', !showNext);
+            generateBtn.classList.toggle('hidden', !showGenerate);
+
+            // Adjust next button position if only next/generate button is visible
+            if (showNext && !showPrev && !showGenerate) {
+                 nextBtn.classList.add('ml-auto');
+            } else if (showGenerate && !showPrev && !showNext) {
+                 // generateBtn already has w-full so no ml-auto needed
+            } else {
+                 nextBtn.classList.remove('ml-auto');
+            }
+        }
+
+        // --- Event Listeners for Navigation ---
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                agentData.generatedAIResponse = ''; // Clear previous AI response on back navigation
+                agentData.deploymentId = '';
+                renderStep();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            // Max step is 6 (review/generate) in this simplified flow
+            if (currentStep < 6) {
+                currentStep++;
+                renderStep();
+            }
+        });
+
+        generateBtn.addEventListener('click', async () => {
+            showMessage('Sending Agent data to backend for AI generation...', 'info');
+            generateBtn.disabled = true; // Disable button to prevent multiple clicks
+
+            try {
+                const backendUrl = 'http://localhost:5000/api/generate-agent-ai'; // Your backend endpoint
+
+                // Create FormData for sending files
+                const formData = new FormData();
+
+                // Append all text-based agentData fields
+                for (const key in agentData) {
+                    if (agentData.hasOwnProperty(key) && key !== 'knowledgeBaseFile' && key !== 'generatedAIResponse' && key !== 'deploymentId') {
+                        // Ensure nested objects like advancedFeatures are stringified
+                        if (typeof agentData[key] === 'object' && agentData[key] !== null) {
+                            formData.append(key, JSON.stringify(agentData[key]));
+                        } else {
+                            formData.append(key, agentData[key]);
+                        }
+                    }
+                }
+
+                // Append the knowledge base file if selected
+                if (agentData.knowledgeBaseFile) {
+                    formData.append('knowledgeBaseFile', agentData.knowledgeBaseFile);
+                }
+
+                // For POST requests with FormData, don't set 'Content-Type': 'application/json'
+                // The browser sets it automatically with the correct boundary.
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    body: formData, // Send FormData object
+                });
+
+                if (!response.ok) {
+                    // Try to parse JSON error even if response.ok is false
+                    let errorData = {};
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        // If it's not JSON, just get text
+                        const errorText = await response.text();
+                        throw new Error(`Backend error: ${response.status} ${response.statusText} - ${errorText}`);
+                    }
+                    throw new Error(errorData.message || 'Failed to generate Agent AI via backend.');
+                }
+
+                const result = await response.json();
+                agentData.generatedAIResponse = result.generatedText;
+                agentData.deploymentId = result.deploymentId;
+
+                showMessage(`Agent AI generated and ready! Agent ID: ${result.deploymentId}`, 'success');
+                renderStep(); // Re-render to show the generated response and ID
+
+            } catch (error) {
+                console.error('Error sending Agent data to backend:', error);
+                showMessage(`Failed to generate Agent AI: ${error.message}`, 'error');
+            } finally {
+                generateBtn.disabled = false; // Re-enable button
+            }
+        });
+
+        // Initial render on page load
+        document.addEventListener('DOMContentLoaded', renderStep);
+    </script>
+</body>
+</html>
