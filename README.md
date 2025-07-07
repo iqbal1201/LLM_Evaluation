@@ -8,6 +8,7 @@ We assess the agent's responses for hallucination, relevance, usefulness, and ke
 
 ## 📑 Project Structure
 
+```plaintext
 ├── agent_backend.py    # Flask backend (chat API)
 ├── test.py             # Opik evaluation script
 ├── .env                # Environment variables
