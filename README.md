@@ -1,4 +1,4 @@
-# ☕ Bean O LLM Agent Evaluation with Opik
+# ☕ LLM Agent Evaluation with Opik
 
 This project evaluates the performance of a customer support conversational agent  using the **Opik LLM evaluation framework**.
 
@@ -17,8 +17,6 @@ We assess the agent's responses for hallucination, relevance, usefulness, and ke
 ├── README.md
 
 
-
-
 ---
 
 ## 📦 Prerequisites
@@ -34,8 +32,8 @@ We assess the agent's responses for hallucination, relevance, usefulness, and ke
 
 1. **Clone this repository**
    ```bash
-   git clone https://github.com/yourname/beano-agent-eval.git
-   cd beano-agent-eval
+   git clone https://github.com/yourname/beano-agent-eval.git](https://github.com/iqbal1201/LLM_Evaluation.git
+   cd LLM_Evaluation
 
 
 2. **Clone this repository**
@@ -60,6 +58,7 @@ OPENAI_API_KEY=<your_openai_api_key>
 
 
 5. **Result Opik Comet Evaluation*
-   
+   ![image](https://github.com/user-attachments/assets/5e83bd50-26ab-472b-8e9b-f89eda57d993)
+
 
 
